@@ -1,0 +1,377 @@
+package com.bitdagger.campfire;
+
+import java.util.Iterator;
+
+import org.bukkit.ChatColor;
+import org.bukkit.Material;
+import org.bukkit.block.Block;
+import org.bukkit.entity.Arrow;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.Player;
+import org.bukkit.entity.ThrownPotion;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.event.server.PluginDisableEvent;
+import org.bukkit.event.server.PluginEnableEvent;
+import org.bukkit.plugin.Plugin;
+import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
+import com.sk89q.worldguard.protection.ApplicableRegionSet;
+import com.sk89q.worldguard.protection.flags.DefaultFlag;
+
+/**
+ * Event listener
+ * @author bitdagger
+ *
+ */
+public class EventListener implements Listener
+{
+	/**
+	 * Reference to the parent plugin
+	 */
+	private Campfire _plugin;
+	
+	/**
+	 * Reference to the WorldGuard plugin
+	 */
+	private WorldGuardPlugin _worldguard;
+	
+	/**
+	 * Constructor
+	 * Register the references to the parent plugin and WorldGuard plugin
+	 * @param plugin Parent plugin
+	 * @param wg WorldGuard plugin
+	 */
+	public EventListener( Campfire plugin, WorldGuardPlugin wg )
+	{
+		this._plugin = plugin;
+		this._worldguard = wg;
+	}
+	
+	
+	/**
+	 * Search for the WorldGuard plugin if we want it and mark the reference to it
+	 * @param e
+	 */
+	@EventHandler( priority = EventPriority.LOW )
+	public void onPluginLoad( PluginEnableEvent e )
+	{
+		//-- If we're not going to be using WorldGuard, don't bother looking for it
+		if ( !this._plugin.getConfig().getBoolean( "WorldGuardPause" ) ) return;
+		
+		//-- If we already have a reference, great, we're done
+		if ( this._worldguard != null ) return;
+		
+		//-- Check if the loaded plugin is WorldGuard, and if so make the reference
+		Plugin p = e.getPlugin();
+		if ( !p.getDescription().getName().equals( "WorldGuard" ) ) return;
+		if ( !( p instanceof WorldGuardPlugin ) ) return;
+		System.out.println( "[Campfire] Found WorldGuard!" );
+		this._worldguard = ( WorldGuardPlugin ) p; 
+	}
+	
+	/**
+	 * Check if the WorldGuard plugin is disabled while we are using it
+	 * @param e
+	 */
+	@EventHandler( priority = EventPriority.LOW )
+	public void onPluginUnload( PluginDisableEvent e )
+	{
+		//-- If it's already null, nothing to do
+		if ( this._worldguard != null ) return;
+		
+		//-- Check if the disabled plugin was WorldGuard, and if so delete the reference
+		Plugin p = e.getPlugin(); 
+		if ( !p.getDescription().getName().equals( "WorldGuard" ) ) return;
+		if ( !( p instanceof WorldGuardPlugin ) ) return;
+		System.out.println( "[Campfire] WorldGuard disabled!" );
+		this._worldguard = null; 
+	}	
+	
+	/**
+	 * Update a player's WorldGuard protected status
+	 * @param e
+	 */
+	@EventHandler( priority = EventPriority.LOW )
+	public void onMove( PlayerMoveEvent e )
+	{
+		//-- Check that we are using WorldGuard areas, we have a valid reference, and the event wasn't cancelled
+		if ( !this._plugin.getConfig().getBoolean( "WorldGuardPause" ) ) return;
+		if ( this._worldguard == null ) return;
+		if ( e.isCancelled() ) return;
+		
+		//-- Ignore OPs and players who have the campfire immunity flag
+		Player player = e.getPlayer();
+		if ( player.isOp() ) return;
+		if ( player.hasPermission( "Campfire.Immune" ) ) return;
+		
+		//-- Ignore players not under protection
+		DataManager manager = this._plugin.getDataManager();
+		String playerName = player.getName();
+		try {
+			if ( !manager.playerProtected( playerName ) ) return;
+		} catch ( CampfireDataException ex ) {
+			ex.printStackTrace();
+			return;
+		}
+		
+		//-- Check if they are in NoPvP or Invincible regions
+		ApplicableRegionSet region = this._worldguard.getRegionManager( player.getWorld() ).getApplicableRegions( player.getLocation() );
+		boolean isProtected = !region.allows( DefaultFlag.PVP ) || region.allows( DefaultFlag.INVINCIBILITY );
+		
+		//-- Update the data manager with the current protection state
+		try {
+			boolean updated = manager.setPlayerWGProtected( isProtected, playerName );
+			if ( !updated ) return; // The state didn't change, so don't spam messages
+		} catch ( CampfireDataException ex ) {
+			ex.printStackTrace();
+			return;
+		}
+		
+		//-- Send the user a message since protection state was updated
+		if ( isProtected )
+		{
+			player.sendMessage( ChatColor.WHITE + "[" + ChatColor.GOLD + "PvP Protection" + ChatColor.WHITE + "] Entering protected zone." );
+			player.sendMessage( "Protection timer paused!" );
+		} else {
+			player.sendMessage( ChatColor.WHITE + "[" + ChatColor.GOLD + "PvP Protection" + ChatColor.WHITE + "] Leaving protected zone." );
+			player.sendMessage( "Protection timer resumed!" );
+		}
+	}
+	
+	/**
+	 * Prevent PvP damage for players under protection
+	 * @param e
+	 */
+	@EventHandler( priority = EventPriority.HIGH )
+	public void onEntityDamageByEntity( EntityDamageByEntityEvent e )
+	{
+		//-- Make sure the entity is a player
+		Player target = null;
+		if ( e.getEntity() instanceof Player ) target = ( Player ) e.getEntity();
+		if ( target == null ) return;
+		
+		//-- Ignore OPs and players who have the campfire immunity flag
+		if ( target.isOp() ) return;
+		if ( target.hasPermission( "Campfire.Immune" ) ) return;
+		
+		//-- Check if the player is being hurt by TnT
+		String playerName = target.getName();
+		Entity attackerEntity = e.getDamager(); 
+		DataManager manager = this._plugin.getDataManager();
+		if ( attackerEntity instanceof org.bukkit.entity.TNTPrimed )
+		{
+			// TNT damage, prevent it if the player is protected
+			try {
+				if ( manager.playerProtected( playerName ) )
+				{
+					e.setCancelled( true );
+					return;
+				}
+			} catch( CampfireDataException ex ) {
+				ex.printStackTrace();
+				return;
+			}
+		}
+		
+		//-- Check if the attacker was a potion thrown by another player
+		if ( attackerEntity instanceof ThrownPotion )
+		{
+			ThrownPotion potion = (ThrownPotion) attackerEntity;
+			if ( !( potion.getShooter() instanceof Player ) ) return; // Not a player, so we don't care
+			attackerEntity = ( Player ) potion.getShooter();
+		}
+		
+		//-- Check if the attacker was an arrow shot by another player
+		if ( attackerEntity instanceof Arrow )
+		{
+			Arrow arrow = (Arrow) attackerEntity;
+			if ( !( arrow.getShooter() instanceof Player ) ) return; // Not a player, so we don't care
+			attackerEntity = ( Player ) arrow.getShooter();
+		}
+		
+		//-- If it wasn't a player at this point, we don't care
+		if ( !( attackerEntity instanceof Player ) ) return;
+		Player attacker = (Player) attackerEntity;
+		
+		//-- Ignore OPs and players who have the campfire immunity flag
+		if ( attacker.isOp() ) return;
+		if ( attacker.hasPermission( "Campfire.Immune" ) ) return;
+		
+		try {
+			//-- If the attacker is under protection, cancel
+			if ( manager.playerProtected( attacker.getName() ) )
+			{
+				attacker.sendMessage( ChatColor.WHITE + "[" + ChatColor.GOLD + "PvP Protection" + ChatColor.GRAY + "] " + ChatColor.RED + "You cannot PvP at this time!" );
+				e.setCancelled( true );
+				return;
+			}
+			
+			//-- If the victim is under protection, cancel
+			if ( manager.playerProtected( playerName ) )
+			{
+				attacker.sendMessage( ChatColor.WHITE + "[" + ChatColor.GOLD + "PvP Protection" + ChatColor.GRAY + "] " + ChatColor.RED + "Player is protected from PvP!" );
+				e.setCancelled( true );
+				return;
+			}
+		} catch( CampfireDataException ex ) {
+			ex.printStackTrace();
+			return;
+		}
+	}
+	
+	/**
+	 * Reset player data when a player dies
+	 * @param e
+	 */
+	@EventHandler( priority = EventPriority.NORMAL )
+	public void onEntityDeath( PlayerDeathEvent e )
+	{
+		//-- Check if we're supposed to reset on death
+		if ( !this._plugin.getConfig().getBoolean( "ResetOnDeath" ) ) return;
+		
+		//-- Ignore OPs and players who have the campfire immunity flag
+		Player player = e.getEntity();
+		if ( player.isOp() ) return;
+		if ( player.hasPermission( "Campfire.Immune" ) ) return;
+		
+		//-- Reset them and let them know
+		try {
+			this._plugin.getDataManager().resetPlayer( player.getName() );
+		} catch ( CampfireDataException ex ) {
+			ex.printStackTrace();
+			return;
+		}
+		player.sendMessage( ChatColor.WHITE + "[" + ChatColor.GOLD + "PvP Protection" + ChatColor.WHITE + "] " + "You have died! Protection reset!" );
+	}
+	
+	/**
+	 * Add players to the data manager if they are new
+	 * Let returning players know how much time they have left, if any
+	 * @param e
+	 */
+	@EventHandler( priority = EventPriority.HIGH )
+	public void onPlayerJoin( PlayerJoinEvent e  )
+	{
+		//-- Ignore OPs and players who have the campfire immunity flag
+		Player player = e.getPlayer();
+		if ( player.isOp() ) return;
+		if ( player.hasPermission( "Campfire.Immune" ) ) return;
+		
+		//-- Add them to the data manager
+		String playerName = player.getName();
+		DataManager manager = this._plugin.getDataManager();
+		boolean added = manager.addPlayer( playerName );
+		
+		//-- Send them a message
+		if ( added )
+		{
+			player.sendMessage( ChatColor.WHITE + "[" + ChatColor.GOLD + "PvP Protection" + ChatColor.WHITE + "] Starting protection!" );
+			player.sendMessage( "Type '/campfire' for info on PvP Protection" );
+		} else {
+			try {
+				int timeleft = manager.getPlayerTimeLeft( playerName );
+				if ( timeleft == 0 ) return; // Expired, stay silent
+				player.sendMessage( ChatColor.WHITE + "[" + ChatColor.GOLD + "PvP Protection" + ChatColor.WHITE + "] " + String.format("%02d", Math.round(timeleft/60.0)) + " min of protection left!" );
+			} catch( CampfireDataException ex ) {
+				ex.printStackTrace();
+				return;
+			}
+		}
+	}
+	
+	/**
+	 * Prevent the use of lava buckets, tnt, and flint and steel by and around protected players
+	 * @param e
+	 */
+	@EventHandler( priority = EventPriority.HIGH )
+	public void onPlayerInteract( PlayerInteractEvent e )
+	{	
+		//-- Ignore OPs and players who have the campfire immunity flag
+		Player player = e.getPlayer();
+		if ( player.isOp() ) return;
+		if ( player.hasPermission( "Campfire.Immune" ) ) return;
+
+		//-- Get protection status
+		DataManager manager = this._plugin.getDataManager();
+		String playerName = player.getName();
+		boolean isProtected = false;
+		try {
+			isProtected = manager.playerProtected( playerName );
+		} catch ( CampfireDataException ex ) {
+			ex.printStackTrace();
+			return;
+		}
+		
+		//-- Check for restricted items
+		Material itemInHand = player.getItemInHand().getType();
+		boolean restrictedItem = ( itemInHand.compareTo( Material.FLINT_AND_STEEL ) == 0 ||
+				   itemInHand.compareTo( Material.LAVA_BUCKET ) == 0 ||
+				   itemInHand.compareTo( Material.TNT ) == 0 );
+		
+		//-- Prevent protected players from using restricted items and chests
+		if ( isProtected )
+		{
+			// Block restricted items
+			if ( restrictedItem )
+			{
+				player.sendMessage( ChatColor.WHITE + "[" + ChatColor.GOLD + "PvP Protection" + ChatColor.WHITE + "] " + ChatColor.RED + "You cannot use that item while protected!" );
+				player.sendMessage( "Use '/campfire terminate' to end your protection early!" );
+				e.setCancelled( true );
+				return;
+			}
+			
+			// Block chests
+			Block clicked = e.getClickedBlock();
+			if ( clicked == null ) return; // No block clicked
+			Material blocktype = clicked.getType();
+			if ( blocktype.compareTo( Material.CHEST ) == 0 ||  blocktype.compareTo( Material.ENDER_CHEST ) == 0 )
+			{
+				player.sendMessage( ChatColor.WHITE + "[" + ChatColor.GOLD + "PvP Protection" + ChatColor.WHITE + "] " + ChatColor.RED + "You cannot use chests while protected!" );
+				player.sendMessage( "Use '/campfire terminate' to end your protection early!" );
+				e.setCancelled( true );
+				return;
+			}
+			
+		}
+		
+		//-- Prevent non-protected players from using restricted items too close to protected players
+		int radius = this._plugin.getConfig().getInt( "FireRadius" );
+		if ( radius > 0 && restrictedItem && !isProtected )
+		{
+			// Get nearby players
+			Iterator<Entity> nearby = player.getNearbyEntities( radius, radius, radius ).iterator();
+			while ( nearby.hasNext() )
+			{
+				// We only care about players
+				Entity ent = nearby.next();
+				if ( !( ent instanceof Player ) ) continue;
+				Player victim = (Player) ent;
+					
+				// Ignore the player, OPs, and players who have the campfire immunity flag
+				if ( victim.equals( player ) ) continue;	// The player we're already checking around
+				if ( victim.isDead() ) continue;			// Ignore dead people
+				if ( victim.isOp() ) continue;
+				if ( victim.hasPermission( "Campfire.Immune" ) ) continue;
+				
+				// If the victim is protected, cancel and tell the attacker 
+				try {
+					if ( manager.playerProtected( victim.getName() ) )
+					{
+						player.sendMessage( ChatColor.WHITE + "[" + ChatColor.GOLD + "PvP Protection" + ChatColor.WHITE + "] " + ChatColor.RED + "Too close to protected player!" );
+						e.setCancelled( true );
+						return;
+					}
+				} catch( CampfireDataException ex ) {
+					ex.printStackTrace();
+					return;
+				}
+			}
+		}
+	}
+}
