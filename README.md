@@ -1,10 +1,11 @@
 # Campfire - PvP Protection
 
 ## About
-Campfire is a PvP protection plugin for Minecraft. It allows new players to get on their feet before being attacked by 
-more established players. While a player is under Campfire's PvP protection, they are immune to all PvP related damage.  
+Campfire is a PvP Protection plugin designed to give new players a chance to get their footing before being attacked  
+by more well-equipped players. While under PvP Protection,players can't take or receive PvP damage. Players' PvP protection  
+expires after a configurable amount of time, or players may opt to terminate their protection early.  
 
-The PvP protection does not affect normal PvE damage such as fall damage, mobs, drowning, etc.
+Campfire does protect against any kind of environmental damage such as mobs, fall damage, and drowning.
 
 ## Options
 The following options are available in the config.yml file:
