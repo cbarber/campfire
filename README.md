@@ -26,10 +26,10 @@ This prevents indirect killing from fires or lava. Set to 0 to disable.
 ## Permissions
 * **Campfire.Immune** - Grants immunity to Campfire.  
 Players with this permission will not be protected, and can attack those who are protected.
-* **Campfire.Reset** - Allows player to use the reset command
-Players with this permission can reset other players' protection status
-* **Campfire.Reload** - Allows player to use the reload command
-Players with this permission can reload the plugin
+* **Campfire.Reset** - Allows player to use the reset command.  
+Players with this permission can reset other players' protection status.
+* **Campfire.Reload** - Allows player to use the reload command.  
+Players with this permission can reload the plugin.
 
 ## License
 Copyright (c) 2013 Matt Fields
