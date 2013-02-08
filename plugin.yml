@@ -1,7 +1,25 @@
 name: Campfire
 main: com.bitdagger.campfire.Campfire
 version: 4.0
+author: BitDagger
+website: http://github.com/bitdagger/campfire
 commands:
    campfire:
       description: Campfire PvP Protection
       usage: /<command> <action> ...
+permissions:
+  Campfire.*:
+    default: op
+    children:
+      Campfire.Immune: true
+      Campfire.Reload: true
+      Campfire.Reset: true
+  Campfire.Immune:
+    description: Allows you to bypass all Campfire protection 
+    default: op
+  Campfire.Reload:
+    description: Allows you to reload the plugin
+    default: op
+  Campfire.Reset:
+    description: Allows you to reset players' protection
+    default: op
