@@ -6,6 +6,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 
 /**
@@ -46,16 +47,59 @@ public class CommandParser implements CommandExecutor
 	public boolean onCommand( CommandSender sender, Command command, String label, String[] args )
 	{
 		//-- Check arguments
-		if ( args.length == 0 ) return this.commandUsage( sender );
+		if ( args.length == 0 ) return this.commandHelp( sender );
 		
 		//-- Command switch
+		if ( args[0].equalsIgnoreCase( "about" ) ) return this.about( sender, args );
+		if ( args[0].equalsIgnoreCase( "reload" ) ) return this.processReload( sender, args );
 		if ( args[0].equalsIgnoreCase( "reset" ) ) return this.processReset( sender, args );
 		if ( args[0].equalsIgnoreCase( "terminate" ) ) return this.processTerminate( sender, args );
 		if ( args[0].equalsIgnoreCase( "confirm" ) ) return this.processConfirm( sender, args );
 		if ( args[0].equalsIgnoreCase( "timeleft" ) ) return this.processTimeleft( sender, args );
 		
 		//-- Default to usage
-		return this.commandUsage( sender );
+		return this.commandHelp( sender );
+	}
+	
+	/**
+	 * Display about message
+	 * @param sender Command sender
+	 * @param args Arguments
+	 * @return
+	 */
+	private boolean about( CommandSender sender, String[] args )
+	{
+		//-- Send message
+		FileConfiguration config = this._plugin.getConfig();
+		sender.sendMessage( ChatColor.WHITE + "[" + ChatColor.GOLD + "PvP Protection" + ChatColor.WHITE + "]" );
+		sender.sendMessage( "Campfire is a PvP protection plugin designed to help new players get on their feet. Players under protection " +
+				" cannot engage in PvP, open chests, or use items such as TNT and lava buckets. " +
+				"Protection lasts for " + ( config.getInt("Duration")/60 ) + "min" + ( config.getBoolean( "WorldGuardPause" ) ? " and pauses while in WorldGuard protected areas" : "" ) + ". " +
+				"You can end your protection early by using the 'campfire terminate' command, and you can check anyone's protection status using the 'campfire timeleft' command." );
+		return true;
+	}
+	
+	/**
+	 * Process the reload command
+	 * @param sender Command sender
+	 * @param args Arguments
+	 * @return
+	 */
+	private boolean processReload( CommandSender sender, String[] args )
+	{
+		//-- Check their permissions
+		if ( !sender.hasPermission( "Campfire.Reload" ) )
+		{
+			sender.sendMessage( ChatColor.RED + "You don't have permission to do that!" );
+			return true;
+		}
+		
+		//-- Reload the plugin
+		this._plugin.reload();
+		
+		//-- Send message
+		sender.sendMessage( "Reloaded!" );
+		return true;
 	}
 	
 	/**
@@ -80,6 +124,24 @@ public class CommandParser implements CommandExecutor
 			sender.sendMessage( ChatColor.WHITE + "/campfire reset <player>" );
 			sender.sendMessage( ChatColor.GRAY + "Resets a player's protection" );
 			return true;
+		}
+		
+		//-- Check if the target is OP or immune
+		Player player = this._plugin.getServer().getPlayer( args[1] );
+		if ( player != null )
+		{
+			try {
+				if ( player.isOp() || player.hasPermission( "Campfire.Immune" ) )
+				{
+					this._plugin.getDataManager().removePlayer( args[1] );
+					sender.sendMessage( "Protection reset for " + args[1] + "!" );
+					return true;
+				}
+			} catch( CampfireDataException ex ) {
+				// Ignore errors
+				sender.sendMessage( "Protection reset for " + args[1] + "!" );
+				return true;
+			}
 		}
 		
 		//-- Reset target
@@ -131,9 +193,8 @@ public class CommandParser implements CommandExecutor
 		}
 		
 		//-- Show them the warning
-		sender.sendMessage( ChatColor.WHITE + "[" + ChatColor.GOLD + "PvP Protection" + ChatColor.WHITE + "] " + "You will be vulnerable to PvP if you" );
-		sender.sendMessage( ChatColor.WHITE + "end your protection. If you understand the risk, " );
-		sender.sendMessage( ChatColor.WHITE + "use '/campfire confirm' to proceed..." );
+		sender.sendMessage( ChatColor.WHITE + "[" + ChatColor.GOLD + "PvP Protection" + ChatColor.WHITE + "] " + "You will be vulnerable to PvP if you " +
+		"end your protection. If you understand the risk, use '/campfire confirm' to proceed..." );
 		
 		//-- Flag them as having read the termination text
 		this._terminated.add( name );
@@ -213,17 +274,24 @@ public class CommandParser implements CommandExecutor
 	 * Send the default command usage to the sender
 	 * @param sender Command sender
 	 */
-	private boolean commandUsage( CommandSender sender )
+	private boolean commandHelp( CommandSender sender )
 	{
 		sender.sendMessage( ChatColor.WHITE + "[" + ChatColor.GOLD + "PvP Protection" + ChatColor.WHITE + "] Usage: " );
-		sender.sendMessage( ChatColor.WHITE + "/campfire terminate " );
+		sender.sendMessage( ChatColor.WHITE + "/campfire about" );
+		sender.sendMessage( ChatColor.GRAY + "About this plugin" );
+		sender.sendMessage( ChatColor.WHITE + "/campfire terminate" );
 		sender.sendMessage( ChatColor.GRAY + "Removes your protection early" );
-		sender.sendMessage( ChatColor.WHITE + "/campfire timeleft [player] " );
+		sender.sendMessage( ChatColor.WHITE + "/campfire timeleft [player]" );
 		sender.sendMessage( ChatColor.GRAY + "Gives the duration left for a player's protection" );
 		if ( sender.hasPermission( "Campfire.Reset" ) )
 		{
 			sender.sendMessage( ChatColor.WHITE + "/campfire reset <player> " );
 			sender.sendMessage( ChatColor.GRAY + "Resets a player's protection status" );
+		}
+		if ( sender.hasPermission( "Campfire.Reload" ) )
+		{
+			sender.sendMessage( ChatColor.WHITE + "/campfire reload" );
+			sender.sendMessage( ChatColor.GRAY + "Clean reload of the plugin" );
 		}
 		return true;
 	}

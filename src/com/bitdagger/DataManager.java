@@ -24,7 +24,7 @@ public class DataManager
 	private Campfire _plugin;
 	
 	/**
-	 * Actual player data - Keyed by lowercase firstname
+	 * Actual player data - Keyed by lowercase first name
 	 * Saved to disk
 	 */
 	private HashMap<String,PlayerData> _playerData; 
@@ -109,7 +109,12 @@ public class DataManager
 			
 			// Check for protection status
 			String name = player.getName().toLowerCase();
-			if ( !this._playerData.containsKey( name ) ) continue;
+			if ( !this._playerData.containsKey( name ) )
+			{
+				// They aren't on our list... Weird. Add them!
+				this.addPlayer( name );
+				continue;
+			}
 			PlayerData data = this._playerData.get( name );
 			if ( !data.isProtected() ) continue;	// No need to update
 			
@@ -120,19 +125,18 @@ public class DataManager
 			long secondsLeft = this._plugin.getConfig().getLong("Duration") - ( data.getElapsed() / 1000 );
 			if ( secondsLeft <= 0 )
 			{
+				// Protection has expired, so unprotect them and announce to the server they are unprotected
 				data.unprotect();
+				player.sendMessage( ChatColor.WHITE + "[" + ChatColor.GOLD + "PvP Protection" + ChatColor.WHITE + "] You are now vulnerable!" );
 				for ( Player other : this._plugin.getServer().getOnlinePlayers() )
 				{
 					other.sendMessage( ChatColor.WHITE + "[" + ChatColor.GOLD + "PvP Protection" + ChatColor.WHITE + "] Protection for " + name + " has expired!" );
 				}
-				player.sendMessage( ChatColor.WHITE + "[" + ChatColor.GOLD + "PvP Protection" + ChatColor.WHITE + "] You are now vulnerable!" );
-				//this._playerData.put( name, data );
 				continue;
 			}
 			
-			// Send notifications
+			// Send notification about the time left
 			long minutes = Math.round(secondsLeft / 60.0);
-			System.out.println( String.format( "%s:: %d:%d", name, minutes, secondsLeft ) );
 			if ( minutes > 10 && minutes % 5 == 0 && secondsLeft % 60 == 0 )
 			{
 				// Before the last 10 minutes, send messages every 5 minutes on the minute
@@ -154,6 +158,18 @@ public class DataManager
 		name = name.toLowerCase();
 		if ( !this._playerData.containsKey( name ) ) throw new CampfireDataException( "Player not found!" );
 		this._playerData.put( name, new PlayerData() );
+	}
+	
+	/**
+	 * Remove a player from the protection list
+	 * @param name Player to remove
+	 * @throws CampfireDataException 
+	 */
+	public void removePlayer( String name ) throws CampfireDataException
+	{
+		name = name.toLowerCase();
+		if ( !this._playerData.containsKey( name ) ) throw new CampfireDataException( "Player not found!" );
+		this._playerData.remove( name );
 	}
 
 	/**
@@ -184,10 +200,8 @@ public class DataManager
 		name = name.toLowerCase();
 		if ( !this._playerData.containsKey( name ) ) throw new CampfireDataException( "Player not found!" );
 		PlayerData data = this._playerData.get( name );
-		boolean prot = data.isWG();
-		if ( prot == isProtected ) return false;
+		if ( data.isWG() == isProtected ) return false;
 		data.setWG( isProtected );
-		//this._playerData.put( name, data );
 		return true;
 	}
 
@@ -201,10 +215,8 @@ public class DataManager
 		name = name.toLowerCase();
 		if ( this._playerData.containsKey( name ) )
 		{
-			// Player already exists, but probably just logged in, so reset their last update time
-			PlayerData data = this._playerData.get( name );
-			data.setLastUpdated();
-			this._playerData.put( name, data );
+			// Player already exists, reset their last update time
+			this._playerData.get( name ).setLastUpdated();
 			return false;
 		}
 		this._playerData.put( name, new PlayerData() );
@@ -221,8 +233,7 @@ public class DataManager
 	{
 		name = name.toLowerCase();
 		if ( !this._playerData.containsKey( name ) ) throw new CampfireDataException( "Player not found!" );
-		PlayerData data = this._playerData.get( name );
-		return data.isProtected();
+		return this._playerData.get( name ).isProtected();
 	}
 	
 	/**
@@ -234,10 +245,7 @@ public class DataManager
 	{
 		name = name.toLowerCase();
 		if ( !this._playerData.containsKey( name ) ) throw new CampfireDataException( "Player not found!" );
-		
-		PlayerData data = this._playerData.get( name ); 
-		data.unprotect();
-		//this._playerData.put( name, data );
+		this._playerData.get( name ).unprotect();
 	}
 
 }

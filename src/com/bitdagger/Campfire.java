@@ -25,7 +25,7 @@ public class Campfire extends JavaPlugin
 	/**
 	 * Holds the worker thread for updating player data
 	 */
-	private int _thread;
+	private int _task;
 	
 	/**
 	 * Register events and command executor, load the data manager and prepare the plugin for use.
@@ -54,7 +54,7 @@ public class Campfire extends JavaPlugin
 		
 		//-- Start the task to update player data
         final DataManager manager = this._manager;
-        this._thread = this.getServer().getScheduler().scheduleSyncRepeatingTask( this, new Runnable()
+        this._task = this.getServer().getScheduler().scheduleSyncRepeatingTask( this, new Runnable()
         {
             public void run() { manager.update(); }
         }, 20L, 20L ); // Update every second if the clock is perfect
@@ -66,11 +66,35 @@ public class Campfire extends JavaPlugin
 	 */
 	public void onDisable()
 	{
-		//-- Kill the update thread
-		this.getServer().getScheduler().cancelTask( this._thread );
+		//-- Kill the update task
+		this.getServer().getScheduler().cancelTask( this._task );
 
 		//-- Save the existing player data
 		this._manager.savePlayerData();
+	}
+	
+	/**
+	 * Reload the plugin via command
+	 */
+	public void reload()
+	{
+		//-- Kill the update task
+		this.getServer().getScheduler().cancelTask( this._task );
+		
+		//-- Reload config
+		this.reloadConfig();
+		
+		//-- Reload the manager
+		this._manager.savePlayerData();
+		this._manager = new DataManager( this );
+		this._manager.loadPlayerData();
+		
+		//-- Start the task back up again
+        final DataManager manager = this._manager;
+        this._task = this.getServer().getScheduler().scheduleSyncRepeatingTask( this, new Runnable()
+        {
+            public void run() { manager.update(); }
+        }, 20L, 20L ); // Update every second if the clock is perfect
 	}
 	
 	/**

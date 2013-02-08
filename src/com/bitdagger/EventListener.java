@@ -17,6 +17,8 @@ import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.event.server.PluginDisableEvent;
 import org.bukkit.event.server.PluginEnableEvent;
 import org.bukkit.plugin.Plugin;
@@ -272,16 +274,60 @@ public class EventListener implements Listener
 		if ( added )
 		{
 			player.sendMessage( ChatColor.WHITE + "[" + ChatColor.GOLD + "PvP Protection" + ChatColor.WHITE + "] Starting protection!" );
-			player.sendMessage( "Type '/campfire' for info on PvP Protection" );
+			player.sendMessage( ChatColor.GRAY + "Type '/campfire' for info on PvP Protection" );
 		} else {
 			try {
 				int timeleft = manager.getPlayerTimeLeft( playerName );
 				if ( timeleft == 0 ) return; // Expired, stay silent
 				player.sendMessage( ChatColor.WHITE + "[" + ChatColor.GOLD + "PvP Protection" + ChatColor.WHITE + "] " + String.format("%02d", Math.round(timeleft/60.0)) + " min of protection left!" );
+				player.sendMessage( ChatColor.GRAY + "Type '/campfire' for info on PvP Protection" );
 			} catch( CampfireDataException ex ) {
 				ex.printStackTrace();
 				return;
 			}
+		}
+		
+		//-- Save the data to disk
+		manager.savePlayerData();
+	}
+	
+	/**
+	 * Save player data when someone leaves
+	 * @param e
+	 */
+	@EventHandler( priority = EventPriority.HIGH )
+	public void onPlayerQuit( PlayerQuitEvent e  )
+	{
+		//-- Ignore OPs and players who have the campfire immunity flag
+		Player player = e.getPlayer();
+		if ( player.isOp() ) return;
+		if ( player.hasPermission( "Campfire.Immune" ) ) return;
+		
+		//-- Save player data
+		this._plugin.getDataManager().savePlayerData();
+	}
+	
+	/**
+	 * Let respawned players know how much time they have
+	 * @param e
+	 */
+	@EventHandler( priority = EventPriority.HIGH )
+	public void onPlayerRespawn( PlayerRespawnEvent e  )
+	{
+		//-- Ignore OPs and players who have the campfire immunity flag
+		Player player = e.getPlayer();
+		if ( player.isOp() ) return;
+		if ( player.hasPermission( "Campfire.Immune" ) ) return;
+		
+		//-- Send them a message
+		try {
+			int timeleft = this._plugin.getDataManager().getPlayerTimeLeft( player.getName() );
+			if ( timeleft == 0 ) return; // Expired, stay silent
+			player.sendMessage( ChatColor.WHITE + "[" + ChatColor.GOLD + "PvP Protection" + ChatColor.WHITE + "] " + String.format("%02d", Math.round(timeleft/60.0)) + " min of protection left!" );
+			player.sendMessage( ChatColor.GRAY + "Type '/campfire' for info on PvP Protection" );
+		} catch( CampfireDataException ex ) {
+			ex.printStackTrace();
+			return;
 		}
 	}
 	
