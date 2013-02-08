@@ -185,7 +185,6 @@ public class EventListener implements Listener
 		//-- Check if the player is being hurt by a falling anvil
 		if ( attackerEntity instanceof org.bukkit.entity.FallingBlock )
 		{
-			System.out.println( "DEBUG" );
 			// Anvil damage, prevent it if the player is protected
 			try {
 				if ( manager.playerProtected( playerName ) )
