@@ -8,6 +8,7 @@ import org.bukkit.block.Block;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.TNTPrimed;
 import org.bukkit.entity.ThrownPotion;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -166,9 +167,26 @@ public class EventListener implements Listener
 		String playerName = target.getName();
 		Entity attackerEntity = e.getDamager(); 
 		DataManager manager = this._plugin.getDataManager();
-		if ( attackerEntity instanceof org.bukkit.entity.TNTPrimed )
+		if ( attackerEntity instanceof TNTPrimed )
 		{
 			// TNT damage, prevent it if the player is protected
+			try {
+				if ( manager.playerProtected( playerName ) )
+				{
+					e.setCancelled( true );
+					return;
+				}
+			} catch( CampfireDataException ex ) {
+				ex.printStackTrace();
+				return;
+			}
+		}
+		
+		//-- Check if the player is being hurt by a falling anvil
+		if ( attackerEntity instanceof org.bukkit.entity.FallingBlock )
+		{
+			System.out.println( "DEBUG" );
+			// Anvil damage, prevent it if the player is protected
 			try {
 				if ( manager.playerProtected( playerName ) )
 				{
@@ -200,6 +218,14 @@ public class EventListener implements Listener
 		//-- If it wasn't a player at this point, we don't care
 		if ( !( attackerEntity instanceof Player ) ) return;
 		Player attacker = (Player) attackerEntity;
+		
+		//-- Ignore self attacks
+		if ( attacker.equals( target ) )
+		{
+			// >_>
+			e.setCancelled( true );
+			return;
+		}
 		
 		//-- Ignore OPs and players who have the campfire immunity flag
 		if ( attacker.isOp() ) return;
