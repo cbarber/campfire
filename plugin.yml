@@ -8,18 +8,18 @@ commands:
       description: Campfire PvP Protection
       usage: /<command> <action> ...
 permissions:
-  Campfire.*:
+  campfire.*:
     default: op
     children:
-      Campfire.Immune: true
-      Campfire.Reload: true
-      Campfire.Reset: true
-  Campfire.Immune:
+      campfire.immune: true
+      campfire.reload: true
+      campfire.reset: true
+  campfire.immune:
     description: Allows you to bypass all Campfire protection 
     default: op
-  Campfire.Reload:
+  campfire.reload:
     description: Allows you to reload the plugin
     default: op
-  Campfire.Reset:
+  campfire.reset:
     description: Allows you to reset players' protection
     default: op

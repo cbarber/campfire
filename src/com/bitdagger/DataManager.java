@@ -72,7 +72,7 @@ public class DataManager
 		{
 			// Ignore OPs and players who have the campfire immunity flag
 			if ( player.isOp() ) continue;
-			if ( player.hasPermission( "Campfire.Immune" ) ) continue;
+			if ( player.hasPermission( "campfire.immune" ) ) continue;
 			
 			// Add them
 			this.addPlayer( player.getName() );
@@ -104,7 +104,7 @@ public class DataManager
 		{
 			// Ignore OPs and players who have the campfire immunity flag
 			if ( player.isOp() ) continue;
-			if ( player.hasPermission( "Campfire.Immune" ) ) continue;
+			if ( player.hasPermission( "campfire.immune" ) ) continue;
 			if ( player.isDead() ) continue;	// Ignore dead people too
 			
 			// Check for protection status

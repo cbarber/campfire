@@ -111,7 +111,7 @@ public class EventListener implements Listener
 		//-- Ignore OPs and players who have the campfire immunity flag
 		Player player = e.getPlayer();
 		if ( player.isOp() ) return;
-		if ( player.hasPermission( "Campfire.Immune" ) ) return;
+		if ( player.hasPermission( "campfire.immune" ) ) return;
 		
 		//-- Ignore players not under protection
 		DataManager manager = this._plugin.getDataManager();
@@ -161,7 +161,7 @@ public class EventListener implements Listener
 		
 		//-- Ignore OPs and players who have the campfire immunity flag
 		if ( target.isOp() ) return;
-		if ( target.hasPermission( "Campfire.Immune" ) ) return;
+		if ( target.hasPermission( "campfire.immune" ) ) return;
 		
 		//-- Check if the player is being hurt by TnT
 		String playerName = target.getName();
@@ -228,7 +228,7 @@ public class EventListener implements Listener
 		
 		//-- Ignore OPs and players who have the campfire immunity flag
 		if ( attacker.isOp() ) return;
-		if ( attacker.hasPermission( "Campfire.Immune" ) ) return;
+		if ( attacker.hasPermission( "campfire.immune" ) ) return;
 		
 		try {
 			//-- If the attacker is under protection, cancel
@@ -265,7 +265,7 @@ public class EventListener implements Listener
 		//-- Ignore OPs and players who have the campfire immunity flag
 		Player player = e.getEntity();
 		if ( player.isOp() ) return;
-		if ( player.hasPermission( "Campfire.Immune" ) ) return;
+		if ( player.hasPermission( "campfire.immune" ) ) return;
 		
 		//-- Reset them and let them know
 		try {
@@ -288,7 +288,7 @@ public class EventListener implements Listener
 		//-- Ignore OPs and players who have the campfire immunity flag
 		Player player = e.getPlayer();
 		if ( player.isOp() ) return;
-		if ( player.hasPermission( "Campfire.Immune" ) ) return;
+		if ( player.hasPermission( "campfire.immune" ) ) return;
 		
 		//-- Add them to the data manager
 		String playerName = player.getName();
@@ -326,7 +326,7 @@ public class EventListener implements Listener
 		//-- Ignore OPs and players who have the campfire immunity flag
 		Player player = e.getPlayer();
 		if ( player.isOp() ) return;
-		if ( player.hasPermission( "Campfire.Immune" ) ) return;
+		if ( player.hasPermission( "campfire.immune" ) ) return;
 		
 		//-- Save player data
 		this._plugin.getDataManager().savePlayerData();
@@ -342,7 +342,7 @@ public class EventListener implements Listener
 		//-- Ignore OPs and players who have the campfire immunity flag
 		Player player = e.getPlayer();
 		if ( player.isOp() ) return;
-		if ( player.hasPermission( "Campfire.Immune" ) ) return;
+		if ( player.hasPermission( "campfire.immune" ) ) return;
 		
 		//-- Send them a message
 		try {
@@ -366,7 +366,7 @@ public class EventListener implements Listener
 		//-- Ignore OPs and players who have the campfire immunity flag
 		Player player = e.getPlayer();
 		if ( player.isOp() ) return;
-		if ( player.hasPermission( "Campfire.Immune" ) ) return;
+		if ( player.hasPermission( "campfire.immune" ) ) return;
 
 		//-- Get protection status
 		DataManager manager = this._plugin.getDataManager();
@@ -428,7 +428,7 @@ public class EventListener implements Listener
 				if ( victim.equals( player ) ) continue;	// The player we're already checking around
 				if ( victim.isDead() ) continue;			// Ignore dead people
 				if ( victim.isOp() ) continue;
-				if ( victim.hasPermission( "Campfire.Immune" ) ) continue;
+				if ( victim.hasPermission( "campfire.immune" ) ) continue;
 				
 				// If the victim is protected, cancel and tell the attacker 
 				try {

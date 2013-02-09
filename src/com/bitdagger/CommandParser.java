@@ -88,7 +88,7 @@ public class CommandParser implements CommandExecutor
 	private boolean processReload( CommandSender sender, String[] args )
 	{
 		//-- Check their permissions
-		if ( !sender.hasPermission( "Campfire.Reload" ) )
+		if ( !sender.hasPermission( "campfire.reload" ) )
 		{
 			sender.sendMessage( ChatColor.RED + "You don't have permission to do that!" );
 			return true;
@@ -111,7 +111,7 @@ public class CommandParser implements CommandExecutor
 	private boolean processReset( CommandSender sender, String[] args )
 	{
 		//-- Check their permissions
-		if ( !sender.hasPermission( "Campfire.Reset" ) )
+		if ( !sender.hasPermission( "campfire.reset" ) )
 		{
 			sender.sendMessage( ChatColor.RED + "You don't have permission to do that!" );
 			return true;
@@ -131,7 +131,7 @@ public class CommandParser implements CommandExecutor
 		if ( player != null )
 		{
 			try {
-				if ( player.isOp() || player.hasPermission( "Campfire.Immune" ) )
+				if ( player.isOp() || player.hasPermission( "campfire.immune" ) )
 				{
 					this._plugin.getDataManager().removePlayer( args[1] );
 					sender.sendMessage( "Protection reset for " + args[1] + "!" );
@@ -176,7 +176,7 @@ public class CommandParser implements CommandExecutor
 		
 		//-- Ignore OPs and players with the campfire immune permission
 		if ( sender.isOp() ) return true;
-		if ( sender.hasPermission( "Campfire.Immune" ) ) return true;
+		if ( sender.hasPermission( "campfire.immune" ) ) return true;
 		
 		//-- Check if they have already expired
 		DataManager manager = this._plugin.getDataManager();
@@ -218,7 +218,7 @@ public class CommandParser implements CommandExecutor
 		
 		//-- Ignore OPs and players with the campfire immune permission
 		if ( sender.isOp() ) return true;
-		if ( sender.hasPermission( "Campfire.Immune" ) ) return true;
+		if ( sender.hasPermission( "campfire.immune" ) ) return true;
 		
 		//-- Check they have read /campfire terminate first
 		String name = sender.getName();
@@ -283,12 +283,12 @@ public class CommandParser implements CommandExecutor
 		sender.sendMessage( ChatColor.GRAY + "Removes your protection early" );
 		sender.sendMessage( ChatColor.WHITE + "/campfire timeleft [player]" );
 		sender.sendMessage( ChatColor.GRAY + "Gives the duration left for a player's protection" );
-		if ( sender.hasPermission( "Campfire.Reset" ) )
+		if ( sender.hasPermission( "campfire.reset" ) )
 		{
 			sender.sendMessage( ChatColor.WHITE + "/campfire reset <player> " );
 			sender.sendMessage( ChatColor.GRAY + "Resets a player's protection status" );
 		}
-		if ( sender.hasPermission( "Campfire.Reload" ) )
+		if ( sender.hasPermission( "campfire.reload" ) )
 		{
 			sender.sendMessage( ChatColor.WHITE + "/campfire reload" );
 			sender.sendMessage( ChatColor.GRAY + "Clean reload of the plugin" );
