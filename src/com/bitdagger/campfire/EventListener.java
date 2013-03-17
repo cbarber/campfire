@@ -305,13 +305,10 @@ public class EventListener implements Listener
 		Player player = e.getPlayer();
 		if ( player.isOp() ) return;
 		if ( player.hasPermission( "campfire.immune" ) ) return;
-		
-		System.out.println( "DEBUG" );
 				
 		//-- Check if we're supposed to reset on death
 		if ( this._plugin.getConfig().getBoolean( "ResetOnDeath" ) )
 		{
-			System.out.println( "DEBUG2" );
 			//-- Reset them and let them know
 			try {
 				this._plugin.getDataManager().resetPlayer( player.getName() );
