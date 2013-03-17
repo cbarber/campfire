@@ -202,12 +202,7 @@ public class EventListener implements Listener
 		}
 				
 		//-- Check if the attacker was a projectile shot by another player ( Arrow, egg, potion, etc )
-		if ( attackerEntity instanceof Projectile )
-		{
-			Projectile projectile = (Projectile) attackerEntity;
-			if ( !( projectile.getShooter() instanceof Player ) ) return; // Not a player, so we don't care
-			attackerEntity = ( Player ) projectile.getShooter();
-		}
+		if ( attackerEntity instanceof Projectile ) attackerEntity = ((Projectile) attackerEntity).getShooter();
 		
 		//-- If it wasn't a player at this point, we don't care
 		if ( !( attackerEntity instanceof Player ) ) return;
