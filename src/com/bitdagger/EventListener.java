@@ -5,16 +5,19 @@ import java.util.Iterator;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
-import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Projectile;
+import org.bukkit.entity.minecart.StorageMinecart;
 import org.bukkit.entity.TNTPrimed;
-import org.bukkit.entity.ThrownPotion;
+import org.bukkit.entity.Vehicle;
+import org.bukkit.entity.minecart.HopperMinecart;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
@@ -22,6 +25,7 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.event.server.PluginDisableEvent;
 import org.bukkit.event.server.PluginEnableEvent;
+import org.bukkit.event.vehicle.VehicleDamageEvent;
 import org.bukkit.plugin.Plugin;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 import com.sk89q.worldguard.protection.ApplicableRegionSet;
@@ -163,21 +167,25 @@ public class EventListener implements Listener
 		if ( target.isOp() ) return;
 		if ( target.hasPermission( "campfire.immune" ) ) return;
 		
-		//-- Check if the player is being hurt by TnT
+		//-- Get their protected status
 		String playerName = target.getName();
-		Entity attackerEntity = e.getDamager(); 
 		DataManager manager = this._plugin.getDataManager();
+		boolean isProtected = false;
+		try {
+			isProtected = manager.playerProtected( playerName );
+		} catch( CampfireDataException ex ) {
+			ex.printStackTrace();
+			return;
+		}
+		
+		//-- Check if the player is being hurt by TnT
+		Entity attackerEntity = e.getDamager(); 
 		if ( attackerEntity instanceof TNTPrimed )
 		{
 			// TNT damage, prevent it if the player is protected
-			try {
-				if ( manager.playerProtected( playerName ) )
-				{
-					e.setCancelled( true );
-					return;
-				}
-			} catch( CampfireDataException ex ) {
-				ex.printStackTrace();
+			if ( isProtected )
+			{
+				e.setCancelled( true );
 				return;
 			}
 		}
@@ -186,42 +194,28 @@ public class EventListener implements Listener
 		if ( attackerEntity instanceof org.bukkit.entity.FallingBlock )
 		{
 			// Anvil damage, prevent it if the player is protected
-			try {
-				if ( manager.playerProtected( playerName ) )
-				{
-					e.setCancelled( true );
-					return;
-				}
-			} catch( CampfireDataException ex ) {
-				ex.printStackTrace();
+			if ( isProtected )
+			{
+				e.setCancelled( true );
 				return;
 			}
 		}
-		
-		//-- Check if the attacker was a potion thrown by another player
-		if ( attackerEntity instanceof ThrownPotion )
+				
+		//-- Check if the attacker was a projectile shot by another player ( Arrow, egg, potion, etc )
+		if ( attackerEntity instanceof Projectile )
 		{
-			ThrownPotion potion = (ThrownPotion) attackerEntity;
-			if ( !( potion.getShooter() instanceof Player ) ) return; // Not a player, so we don't care
-			attackerEntity = ( Player ) potion.getShooter();
-		}
-		
-		//-- Check if the attacker was an arrow shot by another player
-		if ( attackerEntity instanceof Arrow )
-		{
-			Arrow arrow = (Arrow) attackerEntity;
-			if ( !( arrow.getShooter() instanceof Player ) ) return; // Not a player, so we don't care
-			attackerEntity = ( Player ) arrow.getShooter();
+			Projectile projectile = (Projectile) attackerEntity;
+			if ( !( projectile.getShooter() instanceof Player ) ) return; // Not a player, so we don't care
+			attackerEntity = ( Player ) projectile.getShooter();
 		}
 		
 		//-- If it wasn't a player at this point, we don't care
 		if ( !( attackerEntity instanceof Player ) ) return;
 		Player attacker = (Player) attackerEntity;
 		
-		//-- Ignore self attacks
+		//-- Ignore self attacks, don't let them kill themselves
 		if ( attacker.equals( target ) )
 		{
-			// >_>
 			e.setCancelled( true );
 			return;
 		}
@@ -230,24 +224,24 @@ public class EventListener implements Listener
 		if ( attacker.isOp() ) return;
 		if ( attacker.hasPermission( "campfire.immune" ) ) return;
 		
+		//-- If the attacker is under protection, cancel
 		try {
-			//-- If the attacker is under protection, cancel
 			if ( manager.playerProtected( attacker.getName() ) )
 			{
 				attacker.sendMessage( ChatColor.WHITE + "[" + ChatColor.GOLD + "PvP Protection" + ChatColor.GRAY + "] " + ChatColor.RED + "You cannot PvP at this time!" );
 				e.setCancelled( true );
 				return;
 			}
-			
-			//-- If the victim is under protection, cancel
-			if ( manager.playerProtected( playerName ) )
-			{
-				attacker.sendMessage( ChatColor.WHITE + "[" + ChatColor.GOLD + "PvP Protection" + ChatColor.GRAY + "] " + ChatColor.RED + "Player is protected from PvP!" );
-				e.setCancelled( true );
-				return;
-			}
 		} catch( CampfireDataException ex ) {
 			ex.printStackTrace();
+			return;
+		}
+		
+		//-- If the victim is under protection, cancel
+		if ( isProtected )
+		{
+			attacker.sendMessage( ChatColor.WHITE + "[" + ChatColor.GOLD + "PvP Protection" + ChatColor.GRAY + "] " + ChatColor.RED + "Player is protected from PvP!" );
+			e.setCancelled( true );
 			return;
 		}
 	}
@@ -270,11 +264,11 @@ public class EventListener implements Listener
 		//-- Reset them and let them know
 		try {
 			this._plugin.getDataManager().resetPlayer( player.getName() );
+			player.sendMessage( ChatColor.WHITE + "[" + ChatColor.GOLD + "PvP Protection" + ChatColor.WHITE + "] " + "You have died! Protection reset!" );
 		} catch ( CampfireDataException ex ) {
 			ex.printStackTrace();
 			return;
 		}
-		player.sendMessage( ChatColor.WHITE + "[" + ChatColor.GOLD + "PvP Protection" + ChatColor.WHITE + "] " + "You have died! Protection reset!" );
 	}
 	
 	/**
@@ -357,7 +351,81 @@ public class EventListener implements Listener
 	}
 	
 	/**
-	 * Prevent the use of lava buckets, tnt, and flint and steel by and around protected players
+	 * Prevent protected players from using storage and hopper minecarts
+	 * @param e
+	 */
+	@EventHandler( priority = EventPriority.HIGH )
+	public void onPlayerInteractEntity( PlayerInteractEntityEvent e )
+	{
+		//-- Ignore all other entities
+		Entity ent = e.getRightClicked();
+		if ( !( ent instanceof StorageMinecart ) && !( ent instanceof HopperMinecart ) ) return;
+		
+		//-- Ignore  OPs and players who have the campfire immunity flag
+		Player player = e.getPlayer();
+		if ( player.isOp() ) return;
+		if ( player.hasPermission( "campfire.immune" ) ) return;
+
+		//-- Get protection status
+		DataManager manager = this._plugin.getDataManager();
+		String playerName = player.getName();
+		boolean isProtected = false;
+		try {
+			isProtected = manager.playerProtected( playerName );
+		} catch ( CampfireDataException ex ) {
+			ex.printStackTrace();
+			return;
+		}
+		
+		//-- Ignore non-protected players
+		if ( !isProtected ) return;
+		
+		//-- Disallow protected players from using it
+		player.sendMessage( ChatColor.WHITE + "[" + ChatColor.GOLD + "PvP Protection" + ChatColor.WHITE + "] " + ChatColor.RED + "You cannot use storage and hopper carts while protected!" );
+		player.sendMessage( "Use '/campfire terminate' to end your protection early!" );
+		e.setCancelled( true );
+	}
+	
+	/**
+	 * Prevent protected players from breaking storage and hopper minecarts
+	 * @param e
+	 */
+	@EventHandler( priority = EventPriority.HIGH )
+	public void onVehicleDamage( VehicleDamageEvent e )
+	{
+		//-- Ignore all other vehicles
+		Vehicle v = e.getVehicle();  
+		if ( !( v instanceof StorageMinecart ) && !( v instanceof HopperMinecart ) ) return;
+		
+		//-- Ignore non-players, OPs and players who have the campfire immunity flag
+		Entity ent = e.getAttacker();
+		if ( !( ent instanceof Player ) ) return;
+		Player player = (Player)ent;
+		if ( player.isOp() ) return;
+		if ( player.hasPermission( "campfire.immune" ) ) return;
+
+		//-- Get protection status
+		DataManager manager = this._plugin.getDataManager();
+		String playerName = player.getName();
+		boolean isProtected = false;
+		try {
+			isProtected = manager.playerProtected( playerName );
+		} catch ( CampfireDataException ex ) {
+			ex.printStackTrace();
+			return;
+		}
+		
+		//-- Ignore non-protected players
+		if ( !isProtected ) return;
+		
+		//-- Disallow protected players from breaking it
+		player.sendMessage( ChatColor.WHITE + "[" + ChatColor.GOLD + "PvP Protection" + ChatColor.WHITE + "] " + ChatColor.RED + "You cannot break storage and hopper carts while protected!" );
+		player.sendMessage( "Use '/campfire terminate' to end your protection early!" );
+		e.setCancelled( true );
+	}
+	
+	/**
+	 * Prevent the use of restricted items by and around protected players
 	 * @param e
 	 */
 	@EventHandler( priority = EventPriority.HIGH )
@@ -381,15 +449,16 @@ public class EventListener implements Listener
 		
 		//-- Check for restricted items
 		Material itemInHand = player.getItemInHand().getType();
-		boolean restrictedItem = ( itemInHand.compareTo( Material.FLINT_AND_STEEL ) == 0 ||
-				   itemInHand.compareTo( Material.LAVA_BUCKET ) == 0 ||
-				   itemInHand.compareTo( Material.TNT ) == 0 );
+		boolean restrictedItem = ( itemInHand.compareTo( Material.FLINT_AND_STEEL ) == 0 || 
+					itemInHand.compareTo( Material.FIREBALL ) == 0 ||
+					itemInHand.compareTo( Material.LAVA_BUCKET ) == 0 ||
+					itemInHand.compareTo( Material.TNT ) == 0 );
 		
-		//-- Prevent protected players from using restricted items and chests
+		//-- Prevent protected players from using restricted items and hoppers
 		if ( isProtected )
 		{
 			// Block restricted items
-			if ( restrictedItem )
+			if ( restrictedItem || itemInHand.compareTo( Material.HOPPER ) == 0 || itemInHand.compareTo( Material.HOPPER_MINECART ) == 0 )
 			{
 				player.sendMessage( ChatColor.WHITE + "[" + ChatColor.GOLD + "PvP Protection" + ChatColor.WHITE + "] " + ChatColor.RED + "You cannot use that item while protected!" );
 				player.sendMessage( "Use '/campfire terminate' to end your protection early!" );
@@ -397,13 +466,19 @@ public class EventListener implements Listener
 				return;
 			}
 			
-			// Block chests
+			// Block chests and hoppers
 			Block clicked = e.getClickedBlock();
 			if ( clicked == null ) return; // No block clicked
 			Material blocktype = clicked.getType();
-			if ( blocktype.compareTo( Material.CHEST ) == 0 ||  blocktype.compareTo( Material.ENDER_CHEST ) == 0 )
+			if ( blocktype.compareTo( Material.CHEST ) == 0 || blocktype.compareTo( Material.ENDER_CHEST ) == 0 )
 			{
 				player.sendMessage( ChatColor.WHITE + "[" + ChatColor.GOLD + "PvP Protection" + ChatColor.WHITE + "] " + ChatColor.RED + "You cannot use chests while protected!" );
+				player.sendMessage( "Use '/campfire terminate' to end your protection early!" );
+				e.setCancelled( true );
+				return;
+			} else if ( blocktype.compareTo( Material.HOPPER ) == 0 )
+			{
+				player.sendMessage( ChatColor.WHITE + "[" + ChatColor.GOLD + "PvP Protection" + ChatColor.WHITE + "] " + ChatColor.RED + "You cannot use hoppers while protected!" );
 				player.sendMessage( "Use '/campfire terminate' to end your protection early!" );
 				e.setCancelled( true );
 				return;

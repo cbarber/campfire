@@ -20,8 +20,9 @@ Radius in blocks players are not allowed to start fires or place lava near prote
 This prevents indirect killing from fires or lava. Set to 0 to disable.
 
 ## Dependencies
-* **WorldGuard** *(optional)*
-* **WorldEdit** *(optional)*
+* **Bukkit 1.5** *(Required)*
+* **WorldGuard 5.7.3** *(optional)*
+* **WorldEdit 5.5.3** *(optional)*
 
 ## Permissions
 * **campfire.immune** - Grants immunity to Campfire.  
