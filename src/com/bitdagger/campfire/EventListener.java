@@ -16,7 +16,6 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
@@ -174,8 +173,7 @@ public class EventListener implements Listener
 		try {
 			isProtected = manager.playerProtected( playerName );
 		} catch( CampfireDataException ex ) {
-			ex.printStackTrace();
-			return;
+			//-- They aren't in our list of players. Odd.
 		}
 		
 		//-- Check if the player is being hurt by TnT
@@ -237,31 +235,6 @@ public class EventListener implements Listener
 		{
 			attacker.sendMessage( ChatColor.WHITE + "[" + ChatColor.GOLD + "PvP Protection" + ChatColor.GRAY + "] " + ChatColor.RED + "Player is protected from PvP!" );
 			e.setCancelled( true );
-			return;
-		}
-	}
-	
-	/**
-	 * Reset player data when a player dies
-	 * @param e
-	 */
-	@EventHandler( priority = EventPriority.NORMAL )
-	public void onEntityDeath( PlayerDeathEvent e )
-	{
-		//-- Check if we're supposed to reset on death
-		if ( !this._plugin.getConfig().getBoolean( "ResetOnDeath" ) ) return;
-		
-		//-- Ignore OPs and players who have the campfire immunity flag
-		Player player = e.getEntity();
-		if ( player.isOp() ) return;
-		if ( player.hasPermission( "campfire.immune" ) ) return;
-		
-		//-- Reset them and let them know
-		try {
-			this._plugin.getDataManager().resetPlayer( player.getName() );
-			player.sendMessage( ChatColor.WHITE + "[" + ChatColor.GOLD + "PvP Protection" + ChatColor.WHITE + "] " + "You have died! Protection reset!" );
-		} catch ( CampfireDataException ex ) {
-			ex.printStackTrace();
 			return;
 		}
 	}
@@ -332,6 +305,21 @@ public class EventListener implements Listener
 		Player player = e.getPlayer();
 		if ( player.isOp() ) return;
 		if ( player.hasPermission( "campfire.immune" ) ) return;
+		
+		System.out.println( "DEBUG" );
+				
+		//-- Check if we're supposed to reset on death
+		if ( this._plugin.getConfig().getBoolean( "ResetOnDeath" ) )
+		{
+			System.out.println( "DEBUG2" );
+			//-- Reset them and let them know
+			try {
+				this._plugin.getDataManager().resetPlayer( player.getName() );
+				player.sendMessage( ChatColor.WHITE + "[" + ChatColor.GOLD + "PvP Protection" + ChatColor.WHITE + "] " + "You have died! Protection reset!" );
+			} catch ( CampfireDataException ex ) {
+				//-- Player isn't on our list. Odd.
+			}
+		}
 		
 		//-- Send them a message
 		try {
