@@ -90,7 +90,7 @@ public class EventListener implements Listener
 	public void onPluginUnload( PluginDisableEvent e )
 	{
 		//-- If it's already null, nothing to do
-		if ( this._worldguard != null ) return;
+		if ( this._worldguard == null ) return;
 		
 		//-- Check if the disabled plugin was WorldGuard, and if so delete the reference
 		Plugin p = e.getPlugin(); 
