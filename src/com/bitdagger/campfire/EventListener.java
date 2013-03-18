@@ -450,7 +450,7 @@ public class EventListener implements Listener
 			Block clicked = e.getClickedBlock();
 			if ( clicked == null ) return; // No block clicked
 			Material blocktype = clicked.getType();
-			if ( blocktype.compareTo( Material.CHEST ) == 0 || blocktype.compareTo( Material.ENDER_CHEST ) == 0 )
+			if ( blocktype.compareTo( Material.CHEST ) == 0 || blocktype.compareTo( Material.ENDER_CHEST ) == 0 || blocktype.compareTo( Material.TRAPPED_CHEST ) == 0 )
 			{
 				player.sendMessage( ChatColor.WHITE + "[" + ChatColor.GOLD + "PvP Protection" + ChatColor.WHITE + "] " + ChatColor.RED + "You cannot use chests while protected!" );
 				player.sendMessage( "Use '/campfire terminate' to end your protection early!" );
