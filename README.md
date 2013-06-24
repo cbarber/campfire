@@ -18,6 +18,8 @@ Pause the protection count-down when the player is in a WorldGuard region that h
 * **FireRadius** *(integer)*  
 Radius in blocks players are not allowed to start fires or place lava near protected players.  
 This prevents indirect killing from fires or lava. Set to 0 to disable.
+* **AllowContainers** *(boolean)*
+Whether to allow PVP protected players to use containers (chests, hoppers, etc.)
 
 ## Dependencies
 * **Bukkit 1.5** *(Required)*

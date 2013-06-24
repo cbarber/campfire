@@ -42,7 +42,8 @@ public class DataManager
 		if ( !config.contains( "ResetOnDeath" ) ) config.set( "ResetOnDeath", true );
 		if ( !config.contains( "WorldGuardPause" ) ) config.set( "WorldGuardPause", true );
 		if ( !config.contains( "FireRadius" ) ) config.set( "FireRadius", 5 );
-		plugin.saveConfig();
+		if ( !config.contains( "AllowContainers" ) ) config.set( "AllowContainers", false );
+                plugin.saveConfig();
 		
 		//-- Save reference 
 		this._plugin = plugin;
