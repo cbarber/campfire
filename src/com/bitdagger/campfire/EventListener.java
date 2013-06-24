@@ -337,6 +337,9 @@ public class EventListener implements Listener
 	@EventHandler( priority = EventPriority.HIGH )
 	public void onPlayerInteractEntity( PlayerInteractEntityEvent e )
 	{
+            // Check if usage is allowed in config file
+            boolean containers = this._plugin.getConfig().getBoolean("AllowContainers");
+            if (!containers) {
 		//-- Ignore all other entities
 		Entity ent = e.getRightClicked();
 		if ( !( ent instanceof StorageMinecart ) && !( ent instanceof HopperMinecart ) ) return;
@@ -364,6 +367,7 @@ public class EventListener implements Listener
 		player.sendMessage( ChatColor.WHITE + "[" + ChatColor.GOLD + "PvP Protection" + ChatColor.WHITE + "] " + ChatColor.RED + "You cannot use storage and hopper carts while protected!" );
 		player.sendMessage( "Use '/campfire terminate' to end your protection early!" );
 		e.setCancelled( true );
+            }
 	}
 	
 	/**
@@ -373,6 +377,9 @@ public class EventListener implements Listener
 	@EventHandler( priority = EventPriority.HIGH )
 	public void onVehicleDamage( VehicleDamageEvent e )
 	{
+            // Check if usage is allowed in config file
+            boolean containers = this._plugin.getConfig().getBoolean("AllowContainers");
+            if (!containers) {
 		//-- Ignore all other vehicles
 		Vehicle v = e.getVehicle();  
 		if ( !( v instanceof StorageMinecart ) && !( v instanceof HopperMinecart ) ) return;
@@ -402,6 +409,7 @@ public class EventListener implements Listener
 		player.sendMessage( ChatColor.WHITE + "[" + ChatColor.GOLD + "PvP Protection" + ChatColor.WHITE + "] " + ChatColor.RED + "You cannot break storage and hopper carts while protected!" );
 		player.sendMessage( "Use '/campfire terminate' to end your protection early!" );
 		e.setCancelled( true );
+            }
 	}
 	
 	/**
@@ -447,22 +455,26 @@ public class EventListener implements Listener
 			}
 			
 			// Block chests and hoppers
-			Block clicked = e.getClickedBlock();
-			if ( clicked == null ) return; // No block clicked
-			Material blocktype = clicked.getType();
-			if ( blocktype.compareTo( Material.CHEST ) == 0 || blocktype.compareTo( Material.ENDER_CHEST ) == 0 || blocktype.compareTo( Material.TRAPPED_CHEST ) == 0 )
-			{
-				player.sendMessage( ChatColor.WHITE + "[" + ChatColor.GOLD + "PvP Protection" + ChatColor.WHITE + "] " + ChatColor.RED + "You cannot use chests while protected!" );
-				player.sendMessage( "Use '/campfire terminate' to end your protection early!" );
-				e.setCancelled( true );
-				return;
-			} else if ( blocktype.compareTo( Material.HOPPER ) == 0 )
-			{
-				player.sendMessage( ChatColor.WHITE + "[" + ChatColor.GOLD + "PvP Protection" + ChatColor.WHITE + "] " + ChatColor.RED + "You cannot use hoppers while protected!" );
-				player.sendMessage( "Use '/campfire terminate' to end your protection early!" );
-				e.setCancelled( true );
-				return;
-			}
+                        // Check if usage is allowed in config file
+                        boolean containers = this._plugin.getConfig().getBoolean("AllowContainers");
+                        if (!containers) {
+                            Block clicked = e.getClickedBlock();
+                            if ( clicked == null ) return; // No block clicked
+                            Material blocktype = clicked.getType();
+                            if ( blocktype.compareTo( Material.CHEST ) == 0 || blocktype.compareTo( Material.ENDER_CHEST ) == 0 || blocktype.compareTo( Material.TRAPPED_CHEST ) == 0 )
+                            {
+                                    player.sendMessage( ChatColor.WHITE + "[" + ChatColor.GOLD + "PvP Protection" + ChatColor.WHITE + "] " + ChatColor.RED + "You cannot use chests while protected!" );
+                                    player.sendMessage( "Use '/campfire terminate' to end your protection early!" );
+                                    e.setCancelled( true );
+                                    return;
+                            } else if ( blocktype.compareTo( Material.HOPPER ) == 0 )
+                            {
+                                    player.sendMessage( ChatColor.WHITE + "[" + ChatColor.GOLD + "PvP Protection" + ChatColor.WHITE + "] " + ChatColor.RED + "You cannot use hoppers while protected!" );
+                                    player.sendMessage( "Use '/campfire terminate' to end your protection early!" );
+                                    e.setCancelled( true );
+                                    return;
+                            }
+                        }
 			
 		}
 		
