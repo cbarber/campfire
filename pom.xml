@@ -1,0 +1,103 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>com.bitdagger.campfire</groupId>
+  <artifactId>hcsmp-campfire</artifactId>
+  <version>4.0</version>
+  <packaging>jar</packaging>
+
+  <name>Campfire</name>
+  <url>https://github.com/dpedu/campfire</url>
+
+  <properties>
+    <bukkit.version>1.5-R0.1-SNAPSHOT</bukkit.version>
+    <flyway.version>2.1</flyway.version>
+    <powermock.version>1.5</powermock.version>
+  </properties>
+
+  <repositories>
+     <repository>
+       <id>bukkit-repo</id>
+       <url>http://repo.bukkit.org/content/groups/public/</url>
+     </repository>
+     
+     <repository>
+       <id>hcsmp-common-mvn-repo</id>
+       <url>https://raw.github.com/cbarber/hcsmp-common/mvn-repo/</url>
+       <snapshots>
+         <enabled>true</enabled>
+         <updatePolicy>always</updatePolicy>
+       </snapshots>     
+     </repository>
+  </repositories>
+  
+  <dependencies>
+    <!-- hcsmp-common -->
+    <dependency>
+      <groupId>com.hcsmp.common</groupId>
+      <artifactId>hcsmp-common</artifactId>
+      <version>0.0.2-SNAPSHOT</version>
+    </dependency>
+    
+    <!-- bukkit -->
+    <dependency>
+      <groupId>org.bukkit</groupId>
+      <artifactId>craftbukkit</artifactId>
+      <version>${bukkit.version}</version>
+    </dependency>  
+    <dependency>
+      <groupId>org.bukkit</groupId>
+      <artifactId>bukkit</artifactId>
+      <version>${bukkit.version}</version>
+    </dependency>
+    
+    <!-- worldguard  - http://dev.bukkit.org/server-mods/worldguard/ -->
+    <!-- mvn deploy:deploy-file -Durl=file:///src/hcsmp/hcsmp-hardcore/lib/ -Dfile=../WorldGuard.jar -DgroupId=com.bukkit_plugins -DartifactId=WorldGuard -Dpackaging=jar -Dversion=5.7.3 -->
+    <dependency>
+      <groupId>com.bukkit_plugins</groupId>
+      <artifactId>WorldGuard</artifactId>
+      <version>5.7.3</version>
+    </dependency>
+
+    <!-- worldedit   - http://dev.bukkit.org/server-mods/worldedit/ -->
+    <!-- mvn deploy:deploy-file -Durl=file:///src/hcsmp/hcsmp-hardcore/lib/ -Dfile=../WorldEdit.jar -DgroupId=com.bukkit_plugins -DartifactId=WorldEdit -Dpackaging=jar -Dversion=5.5.3 -->
+    <dependency>
+      <groupId>com.bukkit_plugins</groupId>
+      <artifactId>WorldEdit</artifactId>
+      <version>5.5.3</version>
+    </dependency>
+    
+    <!-- migrations -->
+    <dependency>
+      <groupId>com.googlecode.flyway</groupId>
+      <artifactId>flyway-core</artifactId>
+      <version>${flyway.version}</version>
+    </dependency>    
+    <dependency>
+      <groupId>com.googlecode.flyway</groupId>
+      <artifactId>flyway-maven-plugin</artifactId>
+      <version>${flyway.version}</version>
+    </dependency>
+    
+    <!-- testing -->
+    <dependency>
+      <groupId>org.powermock</groupId>
+      <artifactId>powermock-module-junit4</artifactId>
+      <version>${powermock.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.powermock</groupId>
+      <artifactId>powermock-api-mockito</artifactId>
+      <version>${powermock.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>mysql</groupId>
+      <artifactId>mysql-connector-java</artifactId>
+      <version>5.1.23</version>
+      <scope>test</scope>
+    </dependency>    
+  </dependencies>
+</project>

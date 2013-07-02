@@ -37,7 +37,7 @@ public class DataManager
 	public DataManager( Campfire plugin )
 	{
 		//-- Config check
-		FileConfiguration config = plugin.getConfig();
+	    FileConfiguration config = plugin.getConfig();
 		if ( !config.contains( "Duration" ) ) config.set( "Duration", 60 * 60 );
 		if ( !config.contains( "ResetOnDeath" ) ) config.set( "ResetOnDeath", true );
 		if ( !config.contains( "WorldGuardPause" ) ) config.set( "WorldGuardPause", true );
