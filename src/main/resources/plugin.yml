@@ -1,8 +1,8 @@
 name: Campfire
-main: com.bitdagger.campfire.Campfire
+main: com.hcsmp.campfire.Campfire
 version: 4.0
 author: BitDagger
-website: http://github.com/bitdagger/campfire
+website: http://github.com/hcsmp/campfire
 commands:
    campfire:
       description: Campfire PvP Protection
