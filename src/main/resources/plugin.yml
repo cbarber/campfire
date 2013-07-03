@@ -1,6 +1,6 @@
 name: Campfire
 main: com.hcsmp.campfire.Campfire
-version: 4.0
+version: 4.1
 author: BitDagger
 website: http://github.com/hcsmp/campfire
 commands:
